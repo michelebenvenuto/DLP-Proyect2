@@ -159,7 +159,6 @@ class Tree():
         i = 0
 
         regex = self.regex
-        print(regex)
         while i < len(regex):
             # ignore empty spaces
             if regex[i] == ' ':
@@ -294,6 +293,7 @@ def display_tree(root ,i = 0):
         print(" "*(i+2)+ str(node))
         display_tree(node, i + 2)
 
-tree = Tree("a|b")
+tree = Tree("{a|b}")
 dfa = tree.generate_DFA()
 dfa.clean()
+dfa.render("out")

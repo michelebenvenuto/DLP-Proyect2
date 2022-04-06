@@ -1,8 +1,8 @@
 from collections import namedtuple
 
 token = namedtuple('token', ['token_name','value'])
-def look_ahead(buffer, index):
+def look_ahead(buffer, index, positons_ahead = 1):
         try:
-            return buffer[index + 1]
+            return buffer[index + positons_ahead]
         except:
             return -1

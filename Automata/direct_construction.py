@@ -1,5 +1,5 @@
-from functions import epsilon
-from DFA import DFA
+from Automata.functions import epsilon
+from Automata.DFA import DFA
 
 class Node():
     def __init__(self, name, id,childs = []):
@@ -292,8 +292,3 @@ def display_tree(root ,i = 0):
     for node in root.childs:
         print(" "*(i+2)+ str(node))
         display_tree(node, i + 2)
-
-tree = Tree("{a|b}")
-dfa = tree.generate_DFA()
-dfa.clean()
-dfa.render("out")

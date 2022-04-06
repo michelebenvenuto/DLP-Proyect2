@@ -1,4 +1,4 @@
-from FA import FA
+from Automata.FA import FA
 from pythomata import SimpleDFA
 import time
 class DFA(FA):

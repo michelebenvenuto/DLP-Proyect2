@@ -1,6 +1,6 @@
 from Automata.functions import epsilon
 from Automata.DFA import DFA
-
+simboles = ["=","+"]
 class Node():
     def __init__(self, name, id,childs = []):
         self.name = name
@@ -14,7 +14,7 @@ class Node():
         self.lastPos = pos
     
     def calculate_nullable(self):
-        if self.name.isalnum() or self.name == "#":
+        if self.name.isalnum() or self.name == "#" or self.name in simboles :
             if self.name == epsilon:
                 self.nullable = True
             else:
@@ -32,7 +32,6 @@ class Node():
 class Tree():
     def __init__(self, regex):
         self.regex = self.build_augmented_regex(self.replace_simbols(regex))
-        print(self.regex)
         self.root , self.alphabet = self.build_tree()
         self.postOrder = self.post_order(self.root)
         self.postOrder.append(self.root)
@@ -77,7 +76,7 @@ class Tree():
     def calculate_pos(self, firstPos):
         i = 1
         for node in self.postOrder:
-            if node.name.isalnum() or node.name == "#":
+            if node.name.isalnum() or node.name == "#" or node.name in simboles:
                 if node.name == epsilon:
                     node.set_first_pos(set())
                     node.set_last_pos(set())
@@ -135,7 +134,7 @@ class Tree():
     def build_alphabet(self):
         alphabet = set()
         for char in self.regex:
-            if char.isalnum() and char != epsilon:
+            if char.isalnum() or char in simboles and char != epsilon:
                 alphabet.add(char)
         return alphabet
 
@@ -169,7 +168,7 @@ class Tree():
                 ops.append(regex[i])
             
             # NOTE THIS WORKS ONLY BECAUSE WE ARE ONLY READING ONE LETTER AT A TIME
-            elif regex[i].isalnum() or regex[i] == "#":
+            elif regex[i].isalnum() or regex[i] == "#" or regex[i] in simboles:
                 nodes.append(Node(regex[i], id))
                 id +=1
             

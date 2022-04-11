@@ -1,21 +1,22 @@
 from utils import *
 from Automata.direct_construction import Tree
+from Automata.functions import epsilon
 
+#Basic regular expresions that will help while reading the file 
 letter_regex = "(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)"
 digit_regex = "(0|1|2|3|4|5|6|7|8|9)"
 id_regex = letter_regex + "(" + letter_regex + "|" + digit_regex + ")*"
-
+letter_or_numbers =letter_regex + "*|" + digit_regex + "*"
 class Scanner():
     def __init__(self, file_path):
         self.file_path = file_path
-        self.reserved_words = ["COMPILER", "CHARACTERS", "KEYWORDS","TOKENS","PRODUCTIONS"]
+        self.reserved_words = ["COMPILER", "CHARACTERS", "KEYWORDS","TOKENS","PRODUCTIONS", "END"]
         self.curr_index = 0
-        self.keywords = None
-        self.tokens = None
-        self.character_definitions = None
+        self.keywords = {}
+        self.tokens = {}
+        self.character_definitions = {}
         self.extractFileContent()
         self.removeComments()
-        print(self.file_content)
         self.scan()
     
     #Save each line of the file in list self.file_content
@@ -72,16 +73,68 @@ class Scanner():
             self.curr_index += 1
         return buffer
 
-    def scan(self):
+    def read_blank_spaces(self):
+        while(self.file_content[self.curr_index] == ' ' or self.file_content[self.curr_index]== "\n" ):
+            self.curr_index +=1
     
+    def read_section(self, section_name):
+        expression_id = self.expect(id_regex)
+        while expression_id:
+            equals_char= self.expect("=")
+            if equals_char:
+                expression_value = ''
+                while self.file_content[self.curr_index] != ".":
+                    expression_value += self.file_content[self.curr_index]
+                    self.curr_index += 1
+                if section_name == "CHARACTERS":
+                    self.character_definitions[expression_id] = expression_value
+                elif section_name == "KEYWORDS":
+                    self.keywords[expression_id] = expression_value
+                elif section_name == "TOKENS":
+                    self.tokens[expression_id] = expression_value
+            else:
+                raise ValueError("Expected = between id and value ")
+            if self.file_content[self.curr_index] ==".":
+                self.curr_index +=1
+                self.read_blank_spaces()
+                expression_id = self.expect(id_regex)
+            else:
+                raise ValueError("Expected period")
+            if(self.check_if_word_is_reserved(expression_id)):
+                print("Keyword:", expression_id, "found section ended")
+                return expression_id
+    
+    def scan(self):
+        next_section = "CHARACTERS"
         found_compiler_keyword = self.expect("COMPILER")
         if found_compiler_keyword:
-            print(found_compiler_keyword)
             print("Compiler keyword was found in header")
         else:
-            print("Expected compiler definition")
+            raise ValueError("Compiler keyword not found")
         found_compiler_name = self.expect(id_regex)
         if found_compiler_name:
             print("Compiler name: ", found_compiler_name)
-        
+        self.read_blank_spaces()
+        found_characters_key_word = self.expect("CHARACTERS")
+        if found_characters_key_word:
+            self.read_blank_spaces()
+            next_section = self.read_section(next_section)
+        self.read_blank_spaces()
+        next_section = self.read_section(next_section)
+        self.read_blank_spaces()
+        next_section = self.read_section(next_section)
+        self.read_blank_spaces()
+        end = self.expect("END")
+        if end:
+            compiler_name = self.expect(found_compiler_name)
+            if compiler_name:
+                print("File read successfull")
+                print("Definitions found:")
+                print("     Characters:",self.character_definitions)
+                print("     Keywords:",self.keywords)
+                print("     Tokens:",self.tokens)
+            else:
+                raise ValueError("Exptecter", found_compiler_name, "at end line")
+        else:
+            raise ValueError("Expected END statement")
 scanner = Scanner('test.cocol')

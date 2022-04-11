@@ -11,8 +11,8 @@ hexdigit = digit+"ABCDEF".
  
 KEYWORDS 
  
-if="if". 
-while="while". 
+if = "if". 
+while = "while". 
  
 TOKENS 
  

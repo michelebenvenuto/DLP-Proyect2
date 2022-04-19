@@ -1,3 +1,6 @@
+from dataclasses import replace
+
+from sklearn import tree
 from utils import *
 from Automata.direct_construction import Tree
 from Automata.functions import epsilon
@@ -18,6 +21,9 @@ class Scanner():
         self.extractFileContent()
         self.removeComments()
         self.scan()
+        self.clean_char_definitions()
+        self.clean_keywords_definitions()
+        self.clean_tokens()
     
     #Save each line of the file in list self.file_content
     def extractFileContent(self):
@@ -129,12 +135,47 @@ class Scanner():
             compiler_name = self.expect(found_compiler_name)
             if compiler_name:
                 print("File read successfull")
-                print("Definitions found:")
-                print("     Characters:",self.character_definitions)
-                print("     Keywords:",self.keywords)
-                print("     Tokens:",self.tokens)
             else:
-                raise ValueError("Exptecter", found_compiler_name, "at end line")
+                raise ValueError("Exptected", found_compiler_name, "at end line")
         else:
             raise ValueError("Expected END statement")
+
+    def get_file_data(self):
+        return self.character_definitions, self.keywords, self.tokens
+
+    def clean_char_definitions(self):
+        char_definitions = sorted(self.character_definitions.keys(),reverse=True ,key=len)
+        for key in self.character_definitions.keys():
+            self.character_definitions[key] = add_or_opperator(self.character_definitions[key])           
+            for i in char_definitions:
+                if i in self.character_definitions[key]:
+                    self.character_definitions[key] = self.character_definitions[key].replace(i, self.character_definitions[i])
+            self.character_definitions[key] = add_parenthesis(self.character_definitions[key])
+            self.character_definitions[key] = remove_plus(self.character_definitions[key])
+    
+    def clean_keywords_definitions(self):  
+        for key in self.keywords.keys():         
+            self.keywords[key] = add_parenthesis(self.keywords[key])
+
+    def clean_tokens(self):   
+        character_definitions =sorted(self.character_definitions.keys(),reverse=True ,key=len)
+        for key in self.tokens.keys():          
+            for i in character_definitions:
+                if i in self.tokens[key]:
+                    self.tokens[key] = self.tokens[key].replace(i, self.character_definitions[i])
+            self.tokens[key] = add_parenthesis(self.tokens[key])
+            self.tokens[key] = remove_plus(self.tokens[key])
+            self.tokens[key] = remove_except(self.tokens[key])
+    
+    def build_tokens(self):
+        found_tokens = []
+        for i in self.keywords.keys():
+            found_token = token(i, self.keywords[i])
+            found_tokens.append(found_token)
+        for i in self.tokens.keys():
+            found_token = token(i, self.tokens[i])
+            found_tokens.append(found_token)
+        return found_tokens
+
 scanner = Scanner('test.cocol')
+tokens = scanner.build_tokens()

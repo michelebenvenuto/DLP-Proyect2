@@ -8,7 +8,7 @@ def look_ahead(buffer, index, positons_ahead = 1):
             return -1
 
 def remove_plus(string):
-    new_string = string.replace("+",'')
+    new_string = string.replace("+",'|')
     return new_string
 
 def remove_except(string):
@@ -45,7 +45,7 @@ def add_or_opperator(string):
             if i + 1 < len(string) and string[i + 1 ] != '"': 
                 new_string += "|"
         i += 1
-    return new_string
+    return '('+new_string + ')'
         
 def find_sets(string):
     positions = []

@@ -1,0 +1,5 @@
+hola aqui estoy probando el generador de codigo a continuacion una lista de cosas:
+1234
+12345AH
+identificador
+otroidentificador

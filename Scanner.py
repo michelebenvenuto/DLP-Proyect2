@@ -1,6 +1,3 @@
-from dataclasses import replace
-
-from sklearn import tree
 from utils import *
 from Automata.direct_construction import Tree
 from Automata.functions import epsilon
@@ -179,3 +176,4 @@ class Scanner():
 
 scanner = Scanner('test.cocol')
 tokens = scanner.build_tokens()
+print(tokens)

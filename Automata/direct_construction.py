@@ -1,6 +1,6 @@
 from Automata.functions import epsilon
 from Automata.DFA import DFA
-simboles = ["=","+"]
+simboles = ["=","+","-"]
 class Node():
     def __init__(self, name, id,childs = []):
         self.name = name

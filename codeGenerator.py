@@ -1,7 +1,5 @@
-from Parser import parser
 class codeGenerator():
     def __init__(self, path):
-        self.parser = parser
         self.path = path
         self.tab = '    '
         self.line_end = '\n'

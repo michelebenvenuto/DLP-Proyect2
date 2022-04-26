@@ -1,5 +1,7 @@
 from Automata.functions import epsilon
 from Automata.DFA import DFA
+
+pi = 'π'
 simboles = ["=","+","-"]
 class Node():
     def __init__(self, name, id,childs = []):
@@ -23,7 +25,7 @@ class Node():
             self.nullable = True
         elif self.name == '|':
             self.nullable = self.childs[0].nullable or self.childs[1].nullable
-        elif self.name == '.':
+        elif self.name == '•':
             self.nullable = self.childs[0].nullable and self.childs[1].nullable
 
     def __str__(self):
@@ -58,7 +60,7 @@ class Tree():
 
     def calculate_follow_pos(self):
         for node in self.postOrder:
-            if node.name == '.':
+            if node.name == '•':
                 child1 = node.childs[0]
                 child2 = node.childs[1]
                 for pos1 in child1.lastPos:
@@ -93,7 +95,7 @@ class Tree():
                     node.set_first_pos(child1.firstPos | child2.firstPos)
                 else:
                     node.set_last_pos(child1.lastPos | child2.lastPos)
-            elif node.name == '.':
+            elif node.name == '•':
                 child1 = node.childs[0]
                 child2 = node.childs[1]
                 if firstPos:
@@ -127,9 +129,9 @@ class Tree():
             newregex += regex[i]
             if regex[i] !="(" and regex[i] != "|":
                 if i + 1< len(regex) and (regex[i + 1].isalnum() or regex[i + 1] == '(') :
-                    newregex += "."
+                    newregex += '•'
             i += 1
-        return "("+ newregex +")" + "." + "#"
+        return "("+ newregex +")" + '•' + "#"
     
     def build_alphabet(self):
         alphabet = set()
@@ -141,7 +143,7 @@ class Tree():
     def precedence(self,op):
         if op == '|':
             return 1
-        if op == '.':
+        if op == '•':
             return 2
         if op == '*' or op =='+' or op =='?':
             return 3
@@ -184,7 +186,7 @@ class Tree():
                         node1 = nodes.pop()
                         kleen_node = Node('*',id,[node1])
                         id +=1
-                        nodes.append(Node('.',id,[node1, kleen_node]))
+                        nodes.append(Node('•',id,[node1, kleen_node]))
                     elif op == "?":
                         node1 = nodes.pop()
                         epsilon_node = Node(epsilon, id, [])
@@ -209,7 +211,7 @@ class Tree():
                         node1 = nodes.pop()
                         kleen_node = Node('*',id,[node1])
                         id +=1
-                        nodes.append(Node('.',id,[node1, kleen_node]))
+                        nodes.append(Node('•',id,[node1, kleen_node]))
                     elif op == "?":
                         node1 = nodes.pop()
                         nodes.append(Node("|",id,[node1, epsilon]))
@@ -231,7 +233,7 @@ class Tree():
                 node1 = nodes.pop()
                 kleen_node = Node('*',id,[node1])
                 id +=1
-                nodes.append(Node('.',id,[node1, kleen_node]))
+                nodes.append(Node('•',id,[node1, kleen_node]))
             elif op == "?":
                 node1 = nodes.pop()
                 nodes.append(Node("|",id,[node1, epsilon]))

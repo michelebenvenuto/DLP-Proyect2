@@ -3,10 +3,7 @@ from Automata.direct_construction import Tree
 from Automata.functions import epsilon
 
 #Basic regular expresions that will help while reading the file 
-letter_regex = "(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p|q|r|s|t|u|v|w|x|y|z|A|B|C|D|E|F|G|H|I|J|K|L|M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)"
-digit_regex = "(0|1|2|3|4|5|6|7|8|9)"
-id_regex = letter_regex + "(" + letter_regex + "|" + digit_regex + ")*"
-letter_or_numbers =letter_regex + "*|" + digit_regex + "*"
+
 class Scanner():
     def __init__(self, file_path):
         self.file_path = file_path
@@ -22,14 +19,14 @@ class Scanner():
         self.clean_keywords_definitions()
         self.clean_tokens()
     
-    #Save each line of the file in list self.file_content
+    #Save file content in the buffer self.file_content
     def extractFileContent(self):
         file = open(self.file_path, 'r')
         self.file_content = file.read()
         file.close()
-    """
-    Iterate through the file to find and delete comments since they are not used
-    """
+    
+    #Iterate through the file to find and delete comments since they are not used
+    
     def removeComments(self):
         comments_removed= ""
         comentStarted = False
@@ -174,6 +171,7 @@ class Scanner():
             found_tokens.append(found_token)
         return found_tokens
 
-scanner = Scanner('test.cocol')
+file_input = input("Archivo con las definiciones ->")
+scanner = Scanner(file_input)
 tokens = scanner.build_tokens()
 print(tokens)

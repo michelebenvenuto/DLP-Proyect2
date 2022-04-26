@@ -3,3 +3,6 @@ hola aqui estoy probando el generador de codigo a continuacion una lista de cosa
 12345AH
 identificador
 otroidentificador
+if
+while
+do

@@ -1,7 +1,7 @@
 from xml.dom.minidom import Identified
 from Automata.direct_construction import Tree
 from Scanner import tokens
-from utils import token, pi
+from utils import token
 
 class Parser():
     def __init__(self, definitions):

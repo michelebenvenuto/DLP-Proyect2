@@ -123,16 +123,7 @@ class Scanner():
         next_section = self.read_section(next_section)
         self.read_blank_spaces()
         next_section = self.read_section(next_section)
-        self.read_blank_spaces()
-        end = self.expect("END")
-        if end:
-            compiler_name = self.expect(found_compiler_name)
-            if compiler_name:
-                print("File read successfull")
-            else:
-                raise ValueError("Exptected", found_compiler_name, "at end line")
-        else:
-            raise ValueError("Expected END statement")
+        
 
     def get_file_data(self):
         return self.character_definitions, self.keywords, self.tokens

@@ -2,7 +2,7 @@ from Automata.functions import epsilon
 from Automata.DFA import DFA
 
 pi = 'π'
-simboles = ["=","+","-"]
+simboles = ["=","+","-",".","'",'"',"{","}","[","]"]
 class Node():
     def __init__(self, name, id,childs = []):
         self.name = name
@@ -32,8 +32,11 @@ class Node():
         return str(self.id) + ": " +self.name
 
 class Tree():
-    def __init__(self, regex):
-        self.regex = self.build_augmented_regex(self.replace_simbols(regex))
+    def __init__(self, regex, parenthesis_as_simboles = False):
+        if parenthesis_as_simboles:
+            self.regex = self.build_augmented_regex(regex)
+        else:
+            self.regex = self.build_augmented_regex(self.replace_simbols(regex))
         self.root , self.alphabet = self.build_tree()
         self.postOrder = self.post_order(self.root)
         self.postOrder.append(self.root)
@@ -128,7 +131,7 @@ class Tree():
         while i < len(regex):
             newregex += regex[i]
             if regex[i] !="(" and regex[i] != "|":
-                if i + 1< len(regex) and (regex[i + 1].isalnum() or regex[i + 1] == '(') :
+                if i + 1< len(regex) and (regex[i + 1].isalnum() or regex[i+1] in simboles or regex[i + 1] == '(') :
                     newregex += '•'
             i += 1
         return "("+ newregex +")" + '•' + "#"

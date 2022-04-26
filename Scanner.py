@@ -1,5 +1,5 @@
-from utils import *
-from Automata.direct_construction import Tree
+from utils import Tokenizer, look_ahead, cocol_definitions, id_regex, add_or_opperator, add_parenthesis, remove_plus, remove_except, token
+from Automata.direct_construction import Tree 
 from Automata.functions import epsilon
 
 #Basic regular expresions that will help while reading the file 
@@ -12,12 +12,18 @@ class Scanner():
         self.keywords = {}
         self.tokens = {}
         self.character_definitions = {}
+        self.tokens_tokenized = {}
+        self.character_definitions_tokenized = {}
+        self.tokenizer = Tokenizer(cocol_definitions)
         self.extractFileContent()
         self.removeComments()
         self.scan()
-        self.clean_char_definitions()
+        self.tokenize_chars()
+        self.tokenize_tokens()
+        self.remove_except_tonkens()
+        self.build_character_regexes()
+        self.build_token_regexes()
         self.clean_keywords_definitions()
-        self.clean_tokens()
     
     #Save file content in the buffer self.file_content
     def extractFileContent(self):
@@ -127,31 +133,64 @@ class Scanner():
 
     def get_file_data(self):
         return self.character_definitions, self.keywords, self.tokens
-
-    def clean_char_definitions(self):
-        char_definitions = sorted(self.character_definitions.keys(),reverse=True ,key=len)
-        for key in self.character_definitions.keys():
-            self.character_definitions[key] = add_or_opperator(self.character_definitions[key])           
-            for i in char_definitions:
-                if i in self.character_definitions[key]:
-                    self.character_definitions[key] = self.character_definitions[key].replace(i, self.character_definitions[i])
-            self.character_definitions[key] = add_parenthesis(self.character_definitions[key])
-            self.character_definitions[key] = remove_plus(self.character_definitions[key])
     
     def clean_keywords_definitions(self):  
         for key in self.keywords.keys():         
             self.keywords[key] = add_parenthesis(self.keywords[key])
 
-    def clean_tokens(self):   
-        character_definitions =sorted(self.character_definitions.keys(),reverse=True ,key=len)
-        for key in self.tokens.keys():          
-            for i in character_definitions:
-                if i in self.tokens[key]:
-                    self.tokens[key] = self.tokens[key].replace(i, self.character_definitions[i])
-            self.tokens[key] = add_parenthesis(self.tokens[key])
-            self.tokens[key] = remove_plus(self.tokens[key])
-            self.tokens[key] = remove_except(self.tokens[key])
+    def tokenize_chars(self):
+        for key in self.character_definitions.keys():
+            self.character_definitions_tokenized[key] = self.tokenizer.find_tokens(self.character_definitions[key])
     
+    def tokenize_tokens(self):
+        for key in self.tokens.keys():
+            self.tokens_tokenized[key] = self.tokenizer.find_tokens(self.tokens[key])
+    
+    def build_character_regexes(self):
+        for key in self.character_definitions_tokenized.keys():
+            regex = ''
+            for token in self.character_definitions_tokenized[key]:
+                if token.token_name == 'set':
+                    regex += add_parenthesis(add_or_opperator(token.value))
+                elif token.token_name == 'id':
+                    regex += self.character_definitions[token.value]
+                elif token.token_name == 'opp':
+                    if token.value == '+':
+                        regex += '|'
+                    elif token.value == '{' or token.value == '}' or token.value == '[' or token.value == ']':
+                        regex += token.value
+            self.character_definitions[key] = regex
+    
+    def remove_except_tonkens(self):
+        for key in self.tokens_tokenized.keys():
+            i = 0
+            while i < len(self.tokens_tokenized[key]):
+                if self.tokens_tokenized[key][i].value == "EXCEPT":
+                    break
+                i+=1
+            self.tokens_tokenized[key] = self.tokens_tokenized[key][0:i]
+
+
+    def build_token_regexes(self):
+        character_keys = self.character_definitions.keys()
+        for key in self.tokens_tokenized.keys():
+            regex = ''
+            for token in self.tokens_tokenized[key]:
+                if token.token_name == 'set':
+                    regex += add_parenthesis(add_or_opperator(token.value))
+                elif token.token_name == 'id':
+                    if token.value in character_keys:
+                        regex += self.character_definitions[token.value]
+                    elif token.value == "EXCEPT":
+                        pass
+                elif token.token_name == 'opp':
+                    if token.value == '+':
+                        regex += '|'
+                    elif token.value == '{' or token.value == '}' or token.value == '[' or token.value == ']':
+                        regex += token.value
+            self.tokens[key] = regex
+
+
     def build_tokens(self):
         found_tokens = []
         for i in self.keywords.keys():
@@ -164,5 +203,8 @@ class Scanner():
 
 file_input = input("Archivo con las definiciones ->")
 scanner = Scanner(file_input)
+print(scanner.character_definitions_tokenized)
+print(scanner.tokens_tokenized)
+print(scanner.character_definitions)
 tokens = scanner.build_tokens()
 print(tokens)

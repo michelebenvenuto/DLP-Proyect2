@@ -20,7 +20,7 @@ TOKENS
  
 id = letter{letter} EXCEPT KEYWORDS. 
 number = digit{digit}. 
-hexnumber = hexdigit{hexdigit}"(H)". 
+hexnumber = hexdigit{hexdigit}"H". 
  
 PRODUCTIONS 
  

@@ -1,5 +1,5 @@
 probando el generador de codigo
--1234
+1234.520
 12345AH
 identificador
 otroidentificador

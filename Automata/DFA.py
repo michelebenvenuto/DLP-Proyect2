@@ -5,7 +5,7 @@ class DFA(FA):
     def simulate(self,chars):
         s = self.startState
         for i in range(len(chars)):
-            c = chars[i]
+            c = ord(chars[i])
             if c not in self.alphabet:
                 return False, False
             s = self.move(s,c)

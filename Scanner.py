@@ -1,9 +1,10 @@
-from utils import Tokenizer, look_ahead, cocol_definitions, id_regex, add_or_opperator, add_parenthesis, remove_plus, remove_except, token
+from utils import Tokenizer, look_ahead, cocol_definitions, add_or_opperator, add_parenthesis, remove_plus, token
 from Automata.direct_construction import Tree 
 from Automata.functions import epsilon
 
 #Basic regular expresions that will help while reading the file 
-
+letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+digits = '0123456789'
 class Scanner():
     def __init__(self, file_path):
         self.file_path = file_path
@@ -17,13 +18,28 @@ class Scanner():
         self.tokenizer = Tokenizer(cocol_definitions)
         self.extractFileContent()
         self.removeComments()
-        self.scan()
+        self.create_temp_file()
+        self.read_clean_file()
+        self.clean_file_lines()
+        self.get_next_line()
+        self.read_file_content()
+        print("Keywords")
+        print(self.keywords)
+        print("Tokens")
+        print(self.tokens)
+
         self.tokenize_chars()
+        print("Tokenized chars")
+        print(self.character_definitions_tokenized)
         self.tokenize_tokens()
-        self.remove_except_tonkens()
-        self.build_character_regexes()
-        self.build_token_regexes()
+        print("Tokenized tokens")
+        print(self.tokens_tokenized)
+        self.build_characters()
+        self.char_definitions_to_regex()
+        print(self.character_definitions)
         self.clean_keywords_definitions()
+        self.build_tokens_from_regex()
+        print(self.tokens)
     
     #Save file content in the buffer self.file_content
     def extractFileContent(self):
@@ -50,89 +66,83 @@ class Scanner():
         self.file_content = comments_removed
         self.curr_index = 0
 
+    def create_temp_file(self):
+        file = open("temp.ATG","w")
+        file.write(self.file_content)
+        file.close()
+
+    def read_clean_file(self,path = "temp.ATG"):
+        lines = []
+        for line in open(path, 'r').readlines():
+            if line == '\n':
+                pass
+            else:
+                lines.append([char for char in line.strip().strip('\r\t\n').split(' ')
+                if char != '' or char])
+        self.file_lines = lines
     
     def check_if_word_is_reserved(self,word):
         if word in self.reserved_words:
             return True
         return False
 
-    def expect(self, pattern):
-        tree = Tree(pattern)
-        dfa = tree.generate_DFA()
-        found_first_coincidence = False
-        found_last_coincidence = False
-        content = self.file_content
-        buffer = ''
-        while not found_last_coincidence:
-            try:
-                buffer += content[self.curr_index]
-            except:
-                return False
-            found_coincidence = dfa.simulate(buffer)[0]
-            if found_coincidence and not found_first_coincidence:
-                found_first_coincidence = True
-            elif found_coincidence and found_first_coincidence:
+    def clean_file_lines(self):
+        new_lines = []
+        for line in self.file_lines:
+            if len(line) == 0:
                 pass
-            elif not found_coincidence and found_first_coincidence:
-                found_last_coincidence = True
-                buffer= buffer[:-1]
-            self.curr_index += 1
-        return buffer
+            else:
+                new_lines.append(line)
+        self.file_lines = new_lines
 
-    def read_blank_spaces(self):
-        while(self.file_content[self.curr_index] == ' ' or self.file_content[self.curr_index]== "\n" ):
+    def get_next_line(self):
+        if self.curr_index < len(self.file_lines):
+            self.curr_line = self.file_lines[self.curr_index]
             self.curr_index +=1
-    
-    def read_section(self, section_name):
-        expression_id = self.expect(id_regex)
-        while expression_id:
-            equals_char= self.expect("=")
-            if equals_char:
-                expression_value = ''
-                while self.file_content[self.curr_index] != ".":
-                    expression_value += self.file_content[self.curr_index]
-                    self.curr_index += 1
-                if section_name == "CHARACTERS":
-                    self.character_definitions[expression_id] = expression_value
-                elif section_name == "KEYWORDS":
-                    self.keywords[expression_id] = expression_value
-                elif section_name == "TOKENS":
-                    self.tokens[expression_id] = expression_value
-            else:
-                raise ValueError("Expected = between id and value ")
-            if self.file_content[self.curr_index] ==".":
-                self.curr_index +=1
-                self.read_blank_spaces()
-                expression_id = self.expect(id_regex)
-            else:
-                raise ValueError("Expected period")
-            if(self.check_if_word_is_reserved(expression_id)):
-                print("Keyword:", expression_id, "found section ended")
-                return expression_id
-    
-    def scan(self):
-        next_section = "CHARACTERS"
-        found_compiler_keyword = self.expect("COMPILER")
-        if found_compiler_keyword:
-            print("Compiler keyword was found in header")
         else:
-            raise ValueError("Compiler keyword not found")
-        found_compiler_name = self.expect(id_regex)
-        if found_compiler_name:
-            print("Compiler name: ", found_compiler_name)
-        self.read_blank_spaces()
-        found_characters_key_word = self.expect("CHARACTERS")
-        if found_characters_key_word:
-            self.read_blank_spaces()
-            next_section = self.read_section(next_section)
-        self.read_blank_spaces()
-        next_section = self.read_section(next_section)
-        self.read_blank_spaces()
-        next_section = self.read_section(next_section)
-        
+            self.curr_line = -1
 
-    def get_file_data(self):
-        return self.character_definitions, self.keywords, self.tokens
+    def read_file_content(self):  
+        found_section = False
+        while(self.curr_line) != -1:
+            #if the len of the line is one it means we found a section header
+            if len(self.curr_line) == 1:
+                found_section = self.curr_line[0]
+                self.get_next_line()
+            
+            #if the len of the line is two we found either the start or the end 
+            elif len (self.curr_line) == 2:
+                if "COMPILER" in self.curr_line:
+                    self.compiler_name = self.curr_line[0]
+                else:
+                    pass
+                self.get_next_line()
+            # we are inside a section
+            else:
+                id = self.curr_line.pop(0)
+                equals = self.curr_line.pop(0)
+                i = 0
+                value = ''
+                while i < len(self.curr_line):
+                    to_add = self.curr_line[i]
+                    if to_add == "EXCEPT":
+                        break
+                    else:
+                        value += to_add
+                    i+= 1
+                #removing the last position that is the dot
+                if value[-1] == ".":
+                    value = value[0:-1]
+                # add (id, value) to corresponding dictionary 
+                if found_section == "CHARACTERS":
+                    self.character_definitions[id] = value
+                elif found_section == "KEYWORDS":
+                    self.keywords[id] = value
+                elif found_section == "TOKENS":
+                    self.tokens[id] = value
+                else:
+                    pass
+                self.get_next_line()
     
     def clean_keywords_definitions(self):  
         for key in self.keywords.keys():         
@@ -145,51 +155,97 @@ class Scanner():
     def tokenize_tokens(self):
         for key in self.tokens.keys():
             self.tokens_tokenized[key] = self.tokenizer.find_tokens(self.tokens[key])
+
+    def apply_opperator(self, opp, x, y=0):
+        if opp == "+":
+            x = list(x)
+            y = list(y)
+            if len(x) == 1:
+                x = x[0]
+            if len(y) == 1:
+                y = y[0]
+            x = set(x)
+            y = set(y)
+            result = x.union(y)
+            return result
+        elif opp == "-":
+            x = list(x)
+            y = list(y)
+            return set(x) - set(y)
+        elif opp == "..":
+            x = list(x)
+            y = list(y)
+            start = ord(x[0])
+            end = ord(y[0])
+            chars = ''
+            for i in range(start, end+1):
+                chars += chr(i)
+            return set(chars)
+        elif opp == "CHR":
+            return set(chr(x))
+        else:
+            pass
     
-    def build_character_regexes(self):
+    def build_characters(self):
         for key in self.character_definitions_tokenized.keys():
-            regex = ''
-            for token in self.character_definitions_tokenized[key]:
-                if token.token_name == 'set':
-                    regex += add_parenthesis(add_or_opperator(token.value))
-                elif token.token_name == 'id':
-                    regex += self.character_definitions[token.value]
-                elif token.token_name == 'opp':
-                    if token.value == '+':
-                        regex += '|'
-                    elif token.value == '{' or token.value == '}' or token.value == '[' or token.value == ']':
-                        regex += token.value
-            self.character_definitions[key] = regex
+            result = []
+            while len(self.character_definitions_tokenized[key]) != 0:
+                definition = self.character_definitions_tokenized[key].pop(0)
+                if definition.token_name == "opp":
+                    if definition.value in ["+", "-", ".."]:
+                        opperand1= result.pop()
+                        opperand2 = self.character_definitions_tokenized[key].pop(0)
+                        # if the second operand is an id replace it with its value in char definitions
+                        if opperand2.token_name == "id":
+                            opperand2 = self.character_definitions[opperand2.value]
+                            result.append(self.apply_opperator(definition.value, opperand1, opperand2))
+                        # if the second operand is CHR apply CHR to the next token and apply operators
+                        elif opperand2.token_name == "char_opp":
+                            opperand2 = self.apply_opperator("CHR",int(self.character_definitions_tokenized[key].pop(0).value))
+                            result.append(self.apply_opperator(definition.value, opperand1, opperand2))
+                        else:
+                            result.append(self.apply_opperator(definition.value, opperand1, opperand2.value.replace('"', '')))
+                elif definition.token_name == "char_opp":
+                    opperand1 = self.character_definitions_tokenized[key].pop(0)
+                    result.append(self.apply_opperator(definition.value, int(opperand1.value)))
+                elif definition.token_name == "set" or definition.token_name == "opp_string":
+                    result.append(set(definition.value.replace('"','')))
+                elif definition.token_name == "id":
+                    result.append(self.character_definitions[definition.value])
+            self.character_definitions[key] = result[0]
     
-    def remove_except_tonkens(self):
-        for key in self.tokens_tokenized.keys():
+    def char_definitions_to_regex(self):
+        for key in self.character_definitions.keys():
+            result = '('
+            char_list = list(self.character_definitions[key])
             i = 0
-            while i < len(self.tokens_tokenized[key]):
-                if self.tokens_tokenized[key][i].value == "EXCEPT":
-                    break
-                i+=1
-            self.tokens_tokenized[key] = self.tokens_tokenized[key][0:i]
+            while i < len(char_list):
+                result+= char_list[i]
+                if i +1 < len(char_list):
+                    result += "¦"
+                i +=1
+            result += ')'
+            self.character_definitions[key] = result
 
-
-    def build_token_regexes(self):
-        character_keys = self.character_definitions.keys()
+    
+    def build_tokens_from_regex(self):
         for key in self.tokens_tokenized.keys():
-            regex = ''
-            for token in self.tokens_tokenized[key]:
-                if token.token_name == 'set':
-                    regex += add_parenthesis(add_or_opperator(token.value))
-                elif token.token_name == 'id':
-                    if token.value in character_keys:
-                        regex += self.character_definitions[token.value]
-                    elif token.value == "EXCEPT":
-                        pass
-                elif token.token_name == 'opp':
-                    if token.value == '+':
-                        regex += '|'
-                    elif token.value == '{' or token.value == '}' or token.value == '[' or token.value == ']':
-                        regex += token.value
-            self.tokens[key] = regex
-
+            result = ''
+            while len(self.tokens_tokenized[key]) != 0:
+                definition = self.tokens_tokenized[key].pop(0)
+                if definition.token_name == "set" or definition.token_name == "opp_string":
+                    result += definition.value.replace('"','').replace("'", '')
+                elif definition.token_name == "id":
+                    if definition.value in self.character_definitions.keys():
+                        result += self.character_definitions[definition.value]
+                    else:
+                        result += self.tokens[definition.value]
+                elif definition.token_name == "opp":
+                    if definition.value == '|':
+                        result += '¦'
+                    else:
+                        result += definition.value
+            self.tokens[key] = result
 
     def build_tokens(self):
         found_tokens = []
@@ -203,8 +259,6 @@ class Scanner():
 
 file_input = input("Archivo con las definiciones ->")
 scanner = Scanner(file_input)
-print(scanner.character_definitions_tokenized)
-print(scanner.tokens_tokenized)
-print(scanner.character_definitions)
 tokens = scanner.build_tokens()
 print(tokens)
+

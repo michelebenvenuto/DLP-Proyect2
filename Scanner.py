@@ -1,10 +1,10 @@
 from utils import Tokenizer, look_ahead, cocol_definitions, add_or_opperator, add_parenthesis, remove_plus, token
 from Automata.direct_construction import Tree 
 from Automata.functions import epsilon
+from regexes import any 
 
-#Basic regular expresions that will help while reading the file 
-letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-digits = '0123456789'
+simboles = any
+simboles.add('"')
 class Scanner():
     def __init__(self, file_path):
         self.file_path = file_path
@@ -21,25 +21,25 @@ class Scanner():
         self.create_temp_file()
         self.read_clean_file()
         self.clean_file_lines()
+        print(self.file_lines)
         self.get_next_line()
         self.read_file_content()
-        print("Keywords")
-        print(self.keywords)
-        print("Tokens")
-        print(self.tokens)
-
         self.tokenize_chars()
-        print("Tokenized chars")
-        print(self.character_definitions_tokenized)
         self.tokenize_tokens()
-        print("Tokenized tokens")
+        print("CHARACTERS")
+        print(self.character_definitions)
+        print("KEYWORDS")
+        print(self.keywords)
+        print("TOKENS")
+        print(self.tokens)
+        print("CHARACTERS tokenized")
+        print(self.character_definitions_tokenized)
+        print("TOKENS Tokenized")
         print(self.tokens_tokenized)
         self.build_characters()
         self.char_definitions_to_regex()
-        print(self.character_definitions)
         self.clean_keywords_definitions()
         self.build_tokens_from_regex()
-        print(self.tokens)
     
     #Save file content in the buffer self.file_content
     def extractFileContent(self):
@@ -77,7 +77,7 @@ class Scanner():
             if line == '\n':
                 pass
             else:
-                lines.append([char for char in line.strip().strip('\r\t\n').split(' ')
+                lines.append([char for char in line.strip('\r\t\n').split(' ')
                 if char != '' or char])
         self.file_lines = lines
     
@@ -128,7 +128,10 @@ class Scanner():
                     if to_add == "EXCEPT":
                         break
                     else:
-                        value += to_add
+                        if i + 1 < len(self.curr_line):
+                            value += to_add + ' '
+                        else:
+                            value += to_add
                     i+= 1
                 #removing the last position that is the dot
                 if value[-1] == ".":
@@ -208,23 +211,25 @@ class Scanner():
                 elif definition.token_name == "char_opp":
                     opperand1 = self.character_definitions_tokenized[key].pop(0)
                     result.append(self.apply_opperator(definition.value, int(opperand1.value)))
-                elif definition.token_name == "set" or definition.token_name == "opp_string":
+                elif definition.token_name == "set" or definition.token_name == "string" :
                     result.append(set(definition.value.replace('"','')))
+                elif definition.token_name == 'any':
+                    result.append(set(any))
                 elif definition.token_name == "id":
                     result.append(self.character_definitions[definition.value])
             self.character_definitions[key] = result[0]
     
     def char_definitions_to_regex(self):
         for key in self.character_definitions.keys():
-            result = '('
+            result = '≤'
             char_list = list(self.character_definitions[key])
             i = 0
             while i < len(char_list):
                 result+= char_list[i]
                 if i +1 < len(char_list):
-                    result += "¦"
+                    result += "∥"
                 i +=1
-            result += ')'
+            result += '≥'
             self.character_definitions[key] = result
 
     
@@ -233,8 +238,8 @@ class Scanner():
             result = ''
             while len(self.tokens_tokenized[key]) != 0:
                 definition = self.tokens_tokenized[key].pop(0)
-                if definition.token_name == "set" or definition.token_name == "opp_string":
-                    result += definition.value.replace('"','').replace("'", '')
+                if definition.token_name == "set" or definition.token_name == "string":
+                    result += definition.value.replace('"','')
                 elif definition.token_name == "id":
                     if definition.value in self.character_definitions.keys():
                         result += self.character_definitions[definition.value]
@@ -242,7 +247,7 @@ class Scanner():
                         result += self.tokens[definition.value]
                 elif definition.token_name == "opp":
                     if definition.value == '|':
-                        result += '¦'
+                        result += '∥'
                     else:
                         result += definition.value
             self.tokens[key] = result
@@ -256,9 +261,8 @@ class Scanner():
             found_token = token(i, self.tokens[i])
             found_tokens.append(found_token)
         return found_tokens
-
 file_input = input("Archivo con las definiciones ->")
 scanner = Scanner(file_input)
 tokens = scanner.build_tokens()
 print(tokens)
-
+        

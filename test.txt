@@ -1,8 +1,8 @@
-probando el generador de codigo
-1234.520
+probando el generador de codigo 
+-1234.520
 12345AH
 identificador
-otroidentificador
+otroidentificador1
 if
 while
 do

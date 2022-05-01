@@ -17,7 +17,7 @@ class Parser():
             if i +1 >=len(self.definitions):
                 final_regex += self.definitions[i].value 
             else:
-                final_regex += self.definitions[i].value + '¦'
+                final_regex += self.definitions[i].value + '∥'
             i+=1
         self.regex = final_regex
 

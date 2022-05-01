@@ -1,38 +1,17 @@
 from collections import namedtuple
 from Automata.direct_construction import Tree
+from regexes import *
 
-
-ANY = []
-for i in range(0,256):
-    ANY.APPEND(chr(i))
-i = 0
-result = ''
-while i < len(ANY):
-    result+= ANY[i]
-    if i +1 < len(ANY):
-        result += "¦"
-    i +=1
-
-letter_regex = "(a¦b¦c¦d¦e¦f¦g¦h¦i¦j¦k¦l¦m¦n¦o¦p¦q¦r¦s¦t¦u¦v¦w¦x¦y¦z¦A¦B¦C¦D¦E¦F¦G¦H¦I¦J¦K¦L¦M¦N¦O¦P¦Q¦R¦S¦T¦U¦V¦W¦X¦Y¦Z)"
-digit_regex = "(0¦1¦2¦3¦4¦5¦6¦7¦8¦9)"
-id_regex = letter_regex + "(" + letter_regex + "¦" + digit_regex + ")*"
-number = digit_regex + "(" + digit_regex + ")*"
-simboles = "(+¦-¦{¦}¦[¦]¦|¦(..))"
-opp_ass_string = '"' + simboles + '"'
-char_opp = "CHR"
-set_regex = '"'+ "(" + "(" + letter_regex +"("+letter_regex+")*"+")" + "¦" + "("+ digit_regex+ "("+digit_regex+")*" + ")" + ")" +'"'
-char_regex = "'" +"(" + letter_regex +"¦"+ digit_regex+ "¦"+ simboles + ")" + "'"
-letter_or_numbers =letter_regex + "*¦" + digit_regex + "*"
 token = namedtuple('token', ['token_name','value'])
 
 cocol_definitions= [
     token('opp', simboles),
-    token('char_opp', char_opp),
-    token('id', id_regex),
+    token("char_opp", char_opp),
+    token("any", any_set),
     token('number', number),
-    token('opp_string', opp_ass_string),
-    token('char', char_regex),
     token('set', set_regex),
+    token('id', id_regex),
+    token('string', string_regex),
 ]
 
 def look_ahead(buffer, index, positons_ahead = 1):
@@ -42,7 +21,7 @@ def look_ahead(buffer, index, positons_ahead = 1):
             return -1
 
 def remove_plus(string):
-    new_string = string.replace("+",'¦')
+    new_string = string.replace("+",'∥')
     return new_string
 
 
@@ -52,9 +31,9 @@ def add_parenthesis(string):
     set_positions = find_sets(string)
     while i < len(string):
         if i in set_positions and (set_positions.index(i) ) %2 == 0:
-            new_string += '('
+            new_string += '≤'
         elif i in set_positions and (set_positions.index(i)) %2 == 1:
-            new_string += ')'
+            new_string += '≥'
         else:
             new_string += string[i]
         i += 1
@@ -99,7 +78,7 @@ class Tokenizer():
             if i +1 >=len(self.definitions):
                 final_regex += self.definitions[i].value 
             else:
-                final_regex += self.definitions[i].value + '¦'
+                final_regex += self.definitions[i].value + '∥'
             i+=1
         self.regex = final_regex
 

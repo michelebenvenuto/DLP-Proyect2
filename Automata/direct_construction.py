@@ -1,8 +1,10 @@
 from Automata.functions import epsilon
 from Automata.DFA import DFA
+from regexes import any
 
-pi = 'π'
-simboles = ["=","+","-",".","'",'"',"{","}","[","]", "|", "\n","\t","\r"]
+simboles = any
+simboles.add('"')
+
 class Node():
     def __init__(self, name, id,childs = []):
         self.name = name
@@ -16,14 +18,14 @@ class Node():
         self.lastPos = pos
     
     def calculate_nullable(self):
-        if isinstance(self.name, int) or self.name.isalnum() or self.name == "#" or self.name in simboles:
+        if isinstance(self.name, int) or self.name.isalnum() or self.name == "ω" or self.name in simboles:
             if self.name == epsilon:
                 self.nullable = True
             else:
                 self.nullable = False
-        elif self.name == '*':
+        elif self.name == '⋅':
             self.nullable = True
-        elif self.name == "¦":
+        elif self.name == "∥":
             self.nullable = self.childs[0].nullable or self.childs[1].nullable
         elif self.name == '•':
             self.nullable = self.childs[0].nullable and self.childs[1].nullable
@@ -47,10 +49,10 @@ class Tree():
         self.calculate_follow_pos()
 
     def replace_simbols(self,regex):
-        result = regex.replace('{','(')
-        result= result.replace('}',')*')
-        result = result.replace('[','(')
-        result = result.replace(']',')?')
+        result = regex.replace('{','≤')
+        result= result.replace('}','≥⋅')
+        result = result.replace('[','≤')
+        result = result.replace(']','≥?')
 
         return result
     
@@ -69,7 +71,7 @@ class Tree():
                 for pos1 in child1.lastPos:
                     for pos2 in child2.firstPos:
                         self.positions[pos1].add(pos2)
-            elif node.name == '*':
+            elif node.name == '⋅':
                 for pos1 in node.lastPos:
                     for pos2 in node.firstPos:
                         self.positions[pos1].add(pos2)
@@ -81,7 +83,7 @@ class Tree():
     def calculate_pos(self, firstPos):
         i = 1
         for node in self.postOrder:
-            if isinstance(node.name, int) or node.name.isalnum() or node.name == "#" or node.name in simboles:
+            if isinstance(node.name, int) or node.name.isalnum() or node.name == "ω" or node.name in simboles:
                 if node.name == epsilon:
                     node.set_first_pos(set())
                     node.set_last_pos(set())
@@ -91,7 +93,7 @@ class Tree():
                     else:
                         node.set_last_pos(set([i]))
                 i+=1
-            elif node.name == "¦":
+            elif node.name == "∥":
                 child1 = node.childs[0]
                 child2 = node.childs[1]
                 if firstPos:
@@ -111,7 +113,7 @@ class Tree():
                         node.set_last_pos(child1.lastPos | child2.lastPos)
                     else:
                         node.set_last_pos(child2.lastPos) 
-            elif node.name == '*':
+            elif node.name == '⋅':
                 child = node.childs[0]
                 if firstPos:
                     node.set_first_pos(child.firstPos)
@@ -130,11 +132,11 @@ class Tree():
         newregex = ''
         while i < len(regex):
             newregex += regex[i]
-            if regex[i] !="(" and regex[i] != "¦":
-                if i + 1< len(regex) and (regex[i + 1].isalnum() or regex[i+1] in simboles or regex[i + 1] == '(') :
+            if regex[i] !="≤" and regex[i] != "∥":
+                if i + 1< len(regex) and (regex[i + 1].isalnum() or regex[i+1] in simboles or regex[i + 1] == '≤') :
                     newregex += '•'
             i += 1
-        return "("+ newregex +")" + '•' + "#"
+        return "≤"+ newregex +"≥" + '•' + "ω"
     
     def build_alphabet(self):
         alphabet = set()
@@ -144,11 +146,11 @@ class Tree():
         return alphabet
 
     def precedence(self,op):
-        if op == "¦":
+        if op == "∥":
             return 1
         if op == '•':
             return 2
-        if op == '*' or op =='?':
+        if op == '⋅' or op =='?':
             return 3
         return 0
 
@@ -166,18 +168,18 @@ class Tree():
         while i < len(regex):
             # ignore empty spaces
             
-            if regex[i] == '(':
+            if regex[i] == '≤':
                 ops.append(regex[i])
             
             # NOTE THIS WORKS ONLY BECAUSE WE ARE ONLY READING ONE LETTER AT A TIME
-            elif regex[i].isalnum() or regex[i] == "#" or regex[i] in simboles or isinstance(regex[i],int):
+            elif regex[i].isalnum() or regex[i] == "ω" or regex[i] in simboles or isinstance(regex[i],int):
                 nodes.append(Node(ord(regex[i]), id))
                 id +=1
             
-            elif regex[i] == ')':
-                while len(ops) !=0 and ops[-1] != '(':
+            elif regex[i] == '≥':
+                while len(ops) !=0 and ops[-1] != '≤':
                     op = ops.pop()
-                    if op == "*":
+                    if op == "⋅":
                         node1 = nodes.pop()
                         newNode = Node(op, id,[node1])
                         id += 1
@@ -186,7 +188,7 @@ class Tree():
                         node1 = nodes.pop()
                         epsilon_node = Node(epsilon, id, [])
                         id +=1
-                        nodes.append(Node("¦",id,[node1, epsilon_node]))
+                        nodes.append(Node("∥",id,[node1, epsilon_node]))
                         id +=1
                     else:
                         node2 = nodes.pop()
@@ -198,7 +200,7 @@ class Tree():
             else:
                 while (len(ops) != 0 and self.precedence(ops[-1]) >= self.precedence(regex[i])):
                     op = ops.pop()
-                    if op == "*":
+                    if op == "⋅":
                         node1 = nodes.pop()
                         nodes.append(Node(op, id ,[node1]))
                         id += 1
@@ -206,7 +208,7 @@ class Tree():
                         node1 = nodes.pop()
                         epsilon_node = Node(epsilon, id, [])
                         id +=1
-                        nodes.append(Node("¦",id,[node1, epsilon_node]))
+                        nodes.append(Node("∥",id,[node1, epsilon_node]))
                         id +=1
                     else:
                         node2 = nodes.pop()
@@ -217,7 +219,7 @@ class Tree():
             i +=1
         while len(ops) != 0:
             op = ops.pop()
-            if op == "*":
+            if op == "⋅":
                 node1 = nodes.pop()
                 nodes.append(Node(op, id,[node1]))
                 id += 1
@@ -225,7 +227,7 @@ class Tree():
                 node1 = nodes.pop()
                 epsilon_node = Node(epsilon, id, [])
                 id +=1
-                nodes.append(Node("¦",id,[node1, epsilon_node]))
+                nodes.append(Node("∥",id,[node1, epsilon_node]))
                 id +=1
             else:
                 node2 = nodes.pop()
@@ -269,7 +271,7 @@ class Tree():
                     Dtran[S][a] = U
         Dalphabet = self.alphabet
         DfinalStates = set()
-        position_of_hash = self.get_pos_of_simbol(ord('#'))
+        position_of_hash = self.get_pos_of_simbol(ord('ω'))
         for stateSet in Dstates:
             for pos in stateSet:
                 if pos in position_of_hash:

@@ -2,6 +2,7 @@ from utils import Tokenizer, look_ahead, cocol_definitions, add_or_opperator, ad
 from Automata.direct_construction import Tree 
 from Automata.functions import epsilon
 from regexes import any 
+import pickle
 
 simboles = any
 simboles.add('"')
@@ -21,21 +22,10 @@ class Scanner():
         self.create_temp_file()
         self.read_clean_file()
         self.clean_file_lines()
-        print(self.file_lines)
         self.get_next_line()
         self.read_file_content()
         self.tokenize_chars()
         self.tokenize_tokens()
-        print("CHARACTERS")
-        print(self.character_definitions)
-        print("KEYWORDS")
-        print(self.keywords)
-        print("TOKENS")
-        print(self.tokens)
-        print("CHARACTERS tokenized")
-        print(self.character_definitions_tokenized)
-        print("TOKENS Tokenized")
-        print(self.tokens_tokenized)
         self.build_characters()
         self.char_definitions_to_regex()
         self.clean_keywords_definitions()
@@ -51,13 +41,18 @@ class Scanner():
     
     def removeComments(self):
         comments_removed= ""
+        inString = False
         comentStarted = False
         while self.curr_index < len(self.file_content):
-            if self.file_content[self.curr_index] == "(" and look_ahead(self.file_content, self.curr_index)==".":
+            if self.file_content[self.curr_index] == "(" and look_ahead(self.file_content, self.curr_index)=="." and not inString:
                 comentStarted = True
-            elif self.file_content[self.curr_index] =="." and look_ahead(self.file_content, self.curr_index)==")":
+            elif self.file_content[self.curr_index] =="." and look_ahead(self.file_content, self.curr_index)==")" and not inString:
                 comentStarted = False
                 self.curr_index +=2
+            elif self.file_content[self.curr_index] == '"' and not inString:
+                inString = True
+            elif self.file_content[self.curr_index] == '"' and inString:
+                inString = False
             if comentStarted:
                 pass
             else:
@@ -213,6 +208,8 @@ class Scanner():
                     result.append(self.apply_opperator(definition.value, int(opperand1.value)))
                 elif definition.token_name == "set" or definition.token_name == "string" :
                     result.append(set(definition.value.replace('"','')))
+                elif definition.token_name == "char":
+                    result.append(set(definition.value.replace("'",'')))
                 elif definition.token_name == 'any':
                     result.append(set(any))
                 elif definition.token_name == "id":
@@ -221,35 +218,42 @@ class Scanner():
     
     def char_definitions_to_regex(self):
         for key in self.character_definitions.keys():
-            result = '≤'
+            result = ['≤']
             char_list = list(self.character_definitions[key])
             i = 0
             while i < len(char_list):
-                result+= char_list[i]
+                result.append(ord(char_list[i]))
                 if i +1 < len(char_list):
-                    result += "∥"
+                    result.append("∥")
                 i +=1
-            result += '≥'
+            result.append('≥')
             self.character_definitions[key] = result
 
     
     def build_tokens_from_regex(self):
         for key in self.tokens_tokenized.keys():
-            result = ''
+            result = []
             while len(self.tokens_tokenized[key]) != 0:
                 definition = self.tokens_tokenized[key].pop(0)
-                if definition.token_name == "set" or definition.token_name == "string":
-                    result += definition.value.replace('"','')
+                if definition.token_name == "set" or definition.token_name == "string" or definition.token_name == "char":
+                    if definition.token_name == "char":
+                        for i in definition.value.replace("'",''):
+                            result.append(ord(i))
+                    else:
+                        for i in definition.value.replace('"',''):
+                            result.append(ord(i))
                 elif definition.token_name == "id":
                     if definition.value in self.character_definitions.keys():
-                        result += self.character_definitions[definition.value]
+                        for i in self.character_definitions[definition.value]:
+                            result.append(i)
                     else:
-                        result += self.tokens[definition.value]
+                        for i in self.tokens[definition.value]:
+                            result.append(i)
                 elif definition.token_name == "opp":
                     if definition.value == '|':
-                        result += '∥'
+                        result.append('∥')
                     else:
-                        result += definition.value
+                        result.append(definition.value)
             self.tokens[key] = result
 
     def build_tokens(self):
@@ -264,5 +268,9 @@ class Scanner():
 file_input = input("Archivo con las definiciones ->")
 scanner = Scanner(file_input)
 tokens = scanner.build_tokens()
-print(tokens)
+file_name = 'tokens'
+outfile = open(file_name, 'wb')
+pickle.dump(tokens,outfile)
+outfile.close()
+print(f'Las tokens se enceuntran en el archivo {file_name}')
         

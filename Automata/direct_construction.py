@@ -35,6 +35,8 @@ class Node():
 
 class Tree():
     def __init__(self, regex, parenthesis_as_simboles = False):
+        if isinstance(regex, str):
+            regex = list(regex)
         if parenthesis_as_simboles:
             self.regex = self.build_augmented_regex(regex)
         else:
@@ -49,12 +51,22 @@ class Tree():
         self.calculate_follow_pos()
 
     def replace_simbols(self,regex):
-        result = regex.replace('{','≤')
-        result= result.replace('}','≥⋅')
-        result = result.replace('[','≤')
-        result = result.replace(']','≥?')
+        new_regex = []
+        for i in regex:
+            if i == '{':
+                new_regex.append('≤')
+            elif i == '}':
+                new_regex.append('≥')
+                new_regex.append('⋅')
+            elif i == '[':
+                new_regex.append('≤')
+            elif i == ']':
+                new_regex.append('≥')
+                new_regex.append('?')
+            else:
+                new_regex.append(i)
 
-        return result
+        return new_regex
     
     def extract_positions(self):
         positions = {}
@@ -129,20 +141,26 @@ class Tree():
     
     def build_augmented_regex(self,regex):
         i = 0
-        newregex = ''
+        newregex = ["≤"]
         while i < len(regex):
-            newregex += regex[i]
+            newregex.append(regex[i])
             if regex[i] !="≤" and regex[i] != "∥":
-                if i + 1< len(regex) and (regex[i + 1].isalnum() or regex[i+1] in simboles or regex[i + 1] == '≤') :
-                    newregex += '•'
+                if i + 1< len(regex) and (isinstance(regex[i+1],int) or regex[i + 1].isalnum() or regex[i+1] in simboles or regex[i + 1] == '≤') :
+                    newregex.append('•')
             i += 1
-        return "≤"+ newregex +"≥" + '•' + "ω"
+        newregex.append("≥")
+        newregex.append('•')
+        newregex.append("ω")
+        return newregex
     
     def build_alphabet(self):
         alphabet = set()
         for char in self.regex:
-            if char.isalnum() or char in simboles and char != epsilon:
-                alphabet.add(ord(char))
+            if isinstance(char, int) or char.isalnum() or char in simboles and char != epsilon:
+                if isinstance(char, int):
+                    alphabet.add(char)
+                else:
+                    alphabet.add(ord(char))
         return alphabet
 
     def precedence(self,op):
@@ -166,14 +184,14 @@ class Tree():
 
         regex = self.regex
         while i < len(regex):
-            # ignore empty spaces
-            
             if regex[i] == '≤':
                 ops.append(regex[i])
             
-            # NOTE THIS WORKS ONLY BECAUSE WE ARE ONLY READING ONE LETTER AT A TIME
-            elif regex[i].isalnum() or regex[i] == "ω" or regex[i] in simboles or isinstance(regex[i],int):
-                nodes.append(Node(ord(regex[i]), id))
+            elif isinstance(regex[i],int) or regex[i].isalnum() or regex[i] == "ω" or regex[i] in simboles:
+                if isinstance(regex[i], int):  
+                    nodes.append(Node(regex[i], id))
+                else:
+                    nodes.append(Node(ord(regex[i]), id))
                 id +=1
             
             elif regex[i] == '≥':

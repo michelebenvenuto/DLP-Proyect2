@@ -12,6 +12,7 @@ cocol_definitions= [
     token('set', set_regex),
     token('id', id_regex),
     token('string', string_regex),
+    token('char', char_regex)
 ]
 
 def look_ahead(buffer, index, positons_ahead = 1):

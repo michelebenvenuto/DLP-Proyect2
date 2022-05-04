@@ -62,7 +62,7 @@ class Tree():
                 new_regex.append('≤')
             elif i == ']':
                 new_regex.append('≥')
-                new_regex.append('?')
+                new_regex.append('⊕')
             else:
                 new_regex.append(i)
 
@@ -168,7 +168,7 @@ class Tree():
             return 1
         if op == '•':
             return 2
-        if op == '⋅' or op =='?':
+        if op == '⋅' or op =='⊕':
             return 3
         return 0
 
@@ -202,7 +202,7 @@ class Tree():
                         newNode = Node(op, id,[node1])
                         id += 1
                         nodes.append(newNode)
-                    elif op == "?":
+                    elif op == "⊕":
                         node1 = nodes.pop()
                         epsilon_node = Node(epsilon, id, [])
                         id +=1
@@ -222,7 +222,7 @@ class Tree():
                         node1 = nodes.pop()
                         nodes.append(Node(op, id ,[node1]))
                         id += 1
-                    elif op == "?":
+                    elif op == "⊕":
                         node1 = nodes.pop()
                         epsilon_node = Node(epsilon, id, [])
                         id +=1
@@ -241,7 +241,7 @@ class Tree():
                 node1 = nodes.pop()
                 nodes.append(Node(op, id,[node1]))
                 id += 1
-            elif op == "?":
+            elif op == "⊕":
                 node1 = nodes.pop()
                 epsilon_node = Node(epsilon, id, [])
                 id +=1

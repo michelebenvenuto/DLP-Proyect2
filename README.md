@@ -12,8 +12,11 @@ After cloning this repo you should be able to run the corresponding .py files wi
 The programs can be runned using the following comands
 
 python Scanner.py 
+
 python Parser.py
+
 python codeGenerator.py
+
 python generated_code.py <file name>
 
 ## Contributing

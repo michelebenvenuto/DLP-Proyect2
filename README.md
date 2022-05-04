@@ -17,7 +17,7 @@ python Parser.py
 
 python codeGenerator.py
 
-python generated_code.py <file name>
+python generated_code.py [file name]
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
